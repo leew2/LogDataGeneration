@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import os
 import logging
 import json
+import logging.config
 
 # Main =======================================================================================================================
 
@@ -47,9 +48,52 @@ def save_dataframe_to_json(df, output_dir, filename):
     return json_path
 
 
-def setup_logging():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Custom JSON formatter for logging
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            'time': self.formatTime(record, self.datefmt),
+            'level': record.levelname,
+            'name': record.name,
+            'message': record.getMessage(),
+        }
+        return json.dumps(log_record)
+
+def setup_logging():
+    log_dir = os.path.join(os.path.dirname(__file__), 'data')
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, 'FakeLogGen.log')
+    LOGGING_CONFIG = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'json': {
+                '()': JsonFormatter,
+            },
+        },
+        'handlers': {
+            'rotating_file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': log_path,
+                'maxBytes': 1024*1024,  # 1MB
+                'backupCount': 3,
+                'formatter': 'json',
+                'level': 'INFO',
+                'encoding': 'utf-8',
+            },
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'json',
+                'level': 'INFO',
+            },
+        },
+        'root': {
+            'handlers': ['rotating_file', 'console'],
+            'level': 'INFO',
+        },
+    }
+    logging.config.dictConfig(LOGGING_CONFIG)
 # ==================================================================================================================
 
 if __name__ == '__main__':
