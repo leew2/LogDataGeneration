@@ -7,14 +7,14 @@ import logging
 import json
 import logging.config
 import time
-from prometheus_client import start_http_server, Summary
+from prometheus_client import start_http_server, Counter, Gauge
 
 
 # Main =======================================================================================================================
 
 
 
-def main(log_path):
+def main(log_path, run_counter=None):
     setup_logging(log_path)
     # Parameters
     num_rows = 10000
@@ -27,12 +27,14 @@ def main(log_path):
     df = df.sort_values('timestamp')
     df = df.head(10000)  # Ensure only 10,000 rows are saved
 
-    
+
 
     # Save data
     output_dir = os.path.join(os.path.dirname(__file__), 'data')
     json_path = save_dataframe_to_json(df, output_dir, 'synthetic_data.json')
     logging.info(f"Synthetic data saved to {json_path}")
+    if run_counter is not None:
+        run_counter.inc()
 
 # ==================================================================================================================
 
@@ -119,9 +121,20 @@ def clear_log_file(log_path):
 if __name__ == '__main__':
     log_path = os.path.join(os.path.dirname(__file__), 'data', 'FakeLogGen.log')
     clear_log_file(log_path)
+    # Prometheus metrics
+    run_counter = Counter('fake_loggen_runs_total', 'Total number of times main() has run')
+    log_lines_gauge = Gauge('fake_loggen_log_lines', 'Number of log lines in FakeLogGen.log')
+    start_http_server(8000)
+
     counter = 0
     while True:
-        main(log_path)
+        main(log_path, run_counter)
+        if os.path.exists(log_path):
+            with open(log_path, 'r', encoding='utf-8') as f:
+                log_lines = sum(1 for _ in f)
+            log_lines_gauge.set(log_lines)
+        else:
+            log_lines_gauge.set(0)
         counter += 1
         logging.info(f"Run count: {counter}")
         if counter != 0 and counter % 5 == 0:
