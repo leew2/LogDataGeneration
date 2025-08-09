@@ -1,3 +1,4 @@
+
 import random
 import pandas as pd
 from datetime import datetime, time, timedelta
@@ -6,12 +7,15 @@ import logging
 import json
 import logging.config
 import time
+from prometheus_client import start_http_server, Summary
 
 
 # Main =======================================================================================================================
 
-def main():
-    setup_logging()
+
+
+def main(log_path):
+    setup_logging(log_path)
     # Parameters
     num_rows = 10000
     start_time = datetime(2025, 1, 1, 8, 0, 0)
@@ -22,6 +26,8 @@ def main():
     df = generate_synthetic_data(num_rows, start_time, outcomes, priorities)
     df = df.sort_values('timestamp')
     df = df.head(10000)  # Ensure only 10,000 rows are saved
+
+    
 
     # Save data
     output_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -62,10 +68,9 @@ class JsonFormatter(logging.Formatter):
         }
         return json.dumps(log_record)
 
-def setup_logging():
-    log_dir = os.path.join(os.path.dirname(__file__), 'data')
+def setup_logging(log_path):
+    log_dir = os.path.dirname(log_path)
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'FakeLogGen.log')
     LOGGING_CONFIG = {
         'version': 1,
         'disable_existing_loggers': False,
@@ -96,13 +101,27 @@ def setup_logging():
         },
     }
     logging.config.dictConfig(LOGGING_CONFIG)
+
+def clear_log_file(log_path):
+    if os.path.exists(log_path):
+        with open(log_path, 'w') as f:
+            f.truncate(0)
+        print(f"Cleared log file: {log_path}")
+    else:
+        print(f"Log file does not exist, nothing to clear: {log_path}")
+
+
 # ==================================================================================================================
 
-if __name__ == '__main__':
 
+
+
+if __name__ == '__main__':
+    log_path = os.path.join(os.path.dirname(__file__), 'data', 'FakeLogGen.log')
+    clear_log_file(log_path)
     counter = 0
     while True:
-        main()
+        main(log_path)
         counter += 1
         logging.info(f"Run count: {counter}")
         if counter != 0 and counter % 5 == 0:
@@ -113,6 +132,4 @@ if __name__ == '__main__':
             elif user_input != 'n':
                 logging.warning("Invalid input. Continuing the loop.")
         time.sleep(2)
-
-
 
