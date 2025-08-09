@@ -1,10 +1,12 @@
 import random
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import os
 import logging
 import json
 import logging.config
+import time
+
 
 # Main =======================================================================================================================
 
@@ -97,4 +99,20 @@ def setup_logging():
 # ==================================================================================================================
 
 if __name__ == '__main__':
-    main()
+
+    counter = 0
+    while True:
+        main()
+        counter += 1
+        logging.info(f"Run count: {counter}")
+        if counter != 0 and counter % 5 == 0:
+            user_input = input("Counter is a multiple of 5. Do you want to stop? (y/n): ").strip().lower()
+            if user_input == 'y':
+                logging.info("User chose to stop the loop.")
+                break
+            elif user_input != 'n':
+                logging.warning("Invalid input. Continuing the loop.")
+        time.sleep(2)
+
+
+
