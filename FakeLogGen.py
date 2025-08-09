@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import logging
+import json
 
 # Main =======================================================================================================================
 
@@ -26,6 +27,8 @@ def main():
 
 # ==================================================================================================================
 
+
+
 def generate_synthetic_data(num_rows, start_time, outcomes, priorities):
     data = []
     for i in range(num_rows):
@@ -42,6 +45,7 @@ def save_dataframe_to_json(df, output_dir, filename):
     json_path = os.path.join(output_dir, filename)
     df.to_json(json_path, orient='records', lines=True)
     return json_path
+
 
 def setup_logging():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
