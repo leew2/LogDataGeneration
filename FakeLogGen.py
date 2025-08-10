@@ -1,4 +1,3 @@
-
 import random
 import pandas as pd
 from datetime import datetime, time, timedelta
@@ -22,8 +21,8 @@ def main(log_path, run_counter=None):
     outcomes = ['success', 'failure', 'timeout', 'cancelled']
     priorities = ['low', 'medium', 'high', 'critical']
 
-    # Generate data
-    df = generate_synthetic_data(num_rows, start_time, outcomes, priorities)
+    # Generate data with retry
+    df = generate_data_with_retry(num_rows, start_time, outcomes, priorities)
     df = df.sort_values('timestamp')
     df = df.head(10000)  # Ensure only 10,000 rows are saved
 
@@ -56,6 +55,19 @@ def save_dataframe_to_json(df, output_dir, filename):
     json_path = os.path.join(output_dir, filename)
     df.to_json(json_path, orient='records', lines=True)
     return json_path
+
+def generate_data_with_retry(num_rows, start_time, outcomes, priorities, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            df = generate_synthetic_data(num_rows, start_time, outcomes, priorities)
+            return df
+        except Exception as e:
+            logging.error(f"Data failed on attempt {attempt}: {e}")
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                logging.critical("Max retries reached. Failed.")
+                raise
 
 
 
